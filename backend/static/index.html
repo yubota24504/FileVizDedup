@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileVizDedup</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Local vendor assets for offline use -->
+    <link rel="stylesheet" href="/static/vendor/fontawesome.min.css">
+    <script src="/static/vendor/chart.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-folder-tree"></i> FileVizDedup
+            </div>
+            <div class="controls">
+                <button id="lang-toggle" class="btn-icon" title="Switch Language">
+                    <i class="fa-solid fa-globe"></i> <span id="current-lang">EN</span>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <section class="scan-section glass-panel">
+                <h1 id="scan-title">Directory Scanner</h1>
+                <div class="input-group">
+                    <input type="text" id="path-input" placeholder="Enter path (e.g., F:/)" value="F:/">
+                    <button id="scan-btn" class="btn-primary">
+                        <i class="fa-solid fa-magnifying-glass"></i> <span id="scan-btn-text">Scan</span>
+                    </button>
+                </div>
+                <!-- Progress/Loading Indicator -->
+                <div id="loading" class="hidden">
+                    <div class="spinner"></div>
+                    <span id="loading-text">Scanning...</span>
+                </div>
+            </section>
+
+            <div class="dashboard-grid">
+                <!-- File Tree / Visualization -->
+                <section class="viz-section glass-panel">
+                    <div class="section-header">
+                        <h2 id="viz-title">File Visualization</h2>
+                        <div class="view-toggles">
+                            <button class="btn-sm active" data-view="tree"><i class="fa-solid fa-list"></i></button>
+                            <button class="btn-sm" data-view="chart"><i class="fa-solid fa-chart-pie"></i></button>
+                        </div>
+                    </div>
+                    <div id="viz-content" class="viz-content">
+                        <div id="file-tree" class="file-tree"></div>
+                        <div id="chart-container" class="hidden">
+                            <canvas id="file-chart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Duplicates & Improvements -->
+                <section class="dedup-section glass-panel">
+                    <div class="section-header">
+                        <h2 id="dedup-title">Duplicates & Improvements</h2>
+                        <button id="check-dup-btn" class="btn-secondary">
+                            <i class="fa-solid fa-clone"></i> <span id="check-dup-text">Check Duplicates</span>
+                        </button>
+                    </div>
+                    <div id="dedup-content" class="list-content">
+                        <!-- Duplicates will be injected here -->
+                        <div class="empty-state" id="dedup-empty">
+                            <i class="fa-regular fa-clone"></i>
+                            <p id="dedup-empty-text">No duplicates check passed yet.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>

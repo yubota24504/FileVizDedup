@@ -1,0 +1,5 @@
+/* Minimal placeholder for Font Awesome CSS to avoid 404s when offline.
+   For proper icons, run scripts/fetch_assets.ps1 to download actual Font Awesome files.
+*/
+
+.fa, .fas, .far, .fal, .fab { display: inline-block; }
