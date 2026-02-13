@@ -60,9 +60,17 @@
                 <section class="dedup-section glass-panel">
                     <div class="section-header">
                         <h2 id="dedup-title">Duplicates & Improvements</h2>
-                        <button id="check-dup-btn" class="btn-secondary">
-                            <i class="fa-solid fa-clone"></i> <span id="check-dup-text">Check Duplicates</span>
-                        </button>
+                        <div class="button-group">
+                            <button id="check-dup-btn" class="btn-secondary">
+                                <i class="fa-solid fa-clone"></i> <span id="check-dup-text">Check Duplicates</span>
+                            </button>
+                            <button id="explain-btn" class="btn-action" style="display: none;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="explain-btn-text">Explain</span>
+                            </button>
+                            <button id="delete-btn" class="btn-danger" style="display: none;">
+                                <i class="fa-solid fa-trash"></i> <span id="delete-text">Delete Selected</span>
+                            </button>
+                        </div>
                     </div>
                     <div id="dedup-content" class="list-content">
                         <!-- Duplicates will be injected here -->

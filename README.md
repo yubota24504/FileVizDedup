@@ -1,114 +1,109 @@
-# FileVizDedup - File Visualization & Deduplication Tool
+# FileVizDedup - ローカルLLM制御を学ぶための重複ファイル可視化・説明ツール
 
-**[English]** / [日本語](#filevizdedup---ファイル可視化--重複排除ツール)
+## 1. プロジェクト概要
 
----
+FileVizDedupは、ローカル環境で動作する重複ファイル検出・可視化ツールです。単に重複ファイルを見つけるだけでなく、ローカルLLM（Ollama）と連携し、「なぜそれが重複と判断されたのか」を自然言語で説明させる機能を特徴としています。
 
-## 🇺🇸 English Guide
-
-### Overview
-FileVizDedup is an offline tool to visualize your directory structure and identify duplicate files to save space. It runs entirely on your local machine for security.
-
-### Features
-*   **Safe**: Runs only on `localhost` (not accessible from network).
-*   **Visual**: See which folders take up the most space.
-*   **Cleanup**: Find and list duplicate files by size and content.
-*   **Bilingual**: Switch between English and Japanese.
-
-### Installation
-1.  Ensure you have **Python 3.x** installed.
-2.  Run the **`install_requirements.bat`** file (double-click).
-    *   This installs `fastapi`, `uvicorn`, and `pydantic`.
-    *   *You only need to do this once.*
-
-### How to Run
-1.  Double-click **`run_app.bat`**.
-2.  A command window will open (do not close it).
-3.  Your default web browser should automatically open `http://127.0.0.1:8000`.
-
-### Usage
-1.  **Scan**: Enter a drive or folder path (e.g., `F:\` or `C:\Users`) and click "Scan".
-2.  **Visualize**: Use the tabs to toggle between "Tree View" and "Chart View".
-3.  **Find Duplicates**: Click "Check Duplicates" to analyze files. It will group matches by content.
-4.  **Language**: Click the Globe icon 🌐 in the top right to switch to Japanese.
+このプロジェクトの主な目的は、クラウドAIに頼らず、手元の環境でLLMを動かし、その挙動をプロンプトエンジニアリングによって精密に制御する技術を学ぶことにあります。AIは判断を行わず、ルールベースの判定結果を人間に分かりやすく「説明する」役割に徹します。
 
 ---
 
-## 🇯🇵 日本語ガイド (Japanese Guide)
+## 2. 学習目的・コンセプト
 
-### 概要 (Overview)
-FileVizDedupは、フォルダ構造を可視化し、重複ファイルを特定してディスク容量を節約するためのオフラインツールです。セキュリティのため、ローカルマシン上でのみ動作します。
+本プロジェクトは、「LLMをブラックボックスとして使わない」という思想に基づいています。
 
-### 特徴 (Features)
-*   **安全**: `localhost` (自分のPC) のみで動作し、外部ネットワークからはアクセスできません。
-*   **可視化**: どのフォルダが容量を占有しているか一目でわかります。
-*   **整理**: サイズと内容で重複ファイルを検出し、リストアップします。
-*   **バイリンガル**: 日本語と英語を切り替え可能です。
+- **AIに「判断」させるのではなく、「説明」させる**
+  重複ファイルの判定は、hash値やファイルサイズに基づく明確なルール（ルールベース）で行います。LLMは、その判定結果の根拠をユーザーに分かりやすく解説するためにのみ使用されます。これにより、システムのコアロジックを人間が完全に制御下に置くことができます。
 
-### インストール (Installation)
-1.  **Python 3.x** がインストールされていることを確認してください。
-2.  フォルダ内の **`install_requirements.bat`** をダブルクリックして実行します。
-    *   必要なライブラリ (`fastapi`, `uvicorn` など) がインストールされます。
-    *   *これは最初の1回だけ行えばOKです。*
+- **プロンプトによるLLMの出力制御を学ぶ**
+  LLMの出力を安定させるため、「日本語での回答」や「根拠のない推測の禁止」などをプロンプトで厳密に制約します。LLMの自由な発想を活かすのではなく、意図した通りの出力を得ることが目的です。
 
-### 起動方法 (How to Run)
-1.  **`run_app.bat`** をダブルクリックします。
-2.  黒い画面（コマンドプロンプト）が開きます（閉じないでください）。
-3.  自動的にブラウザが立ち上がり、`http://127.0.0.1:8000` が開きます。
+- **ローカルLLMの仕組みを理解する**
+  Ollamaが提供するHTTP APIを直接叩き、モデルの指定や言語の制御を体験することで、ローカルLLMがどのように動作するかの基礎を学びます。
 
-### 使い方 (Usage)
-1.  **スキャン**: ドライブやフォルダのパス（例: `F:\` や `C:\Users`）を入力し、「スキャン」ボタンを押します。
-2.  **可視化**: ツリー表示とグラフ表示を切り替えて、ファイル構成を確認できます。
-3.  **重複チェック**: 「重複チェック」ボタンを押すと、内容が完全に一致するファイルを探し出します。
-4.  **言語切り替え**: 右上の地球儀アイコン 🌐 をクリックすると、日本語/英語が切り替わります。
+このツールは、AI開発の初心者〜中級者が、LLMをより深く理解し、その応用の一歩を踏み出すための練習用プロジェクトとして設計されています。
 
 ---
 
-## License & Publishing / ライセンスと公開について
+## 3. 主な機能
 
-**English (recommended)**
+- **ディレクトリスキャン**: 指定したフォルダ内のファイル構造を解析します。
+- **ファイルサイズ可視化**: どのフォルダやファイルがディスク容量を占有しているかをグラフで表示します。
+- **hashによる重複検出**: ファイルのハッシュ値（SHA256）を比較し、内容が完全に同一のファイルを検出します。
+- **重複による無駄容量の算出**: 重複ファイルによってどれだけのディスク容量が無駄になっているかを計算します。
+- **AI（Ollama）による重複理由の説明**: なぜファイルが重複しているのか、その技術的根拠を自然言語で説明します。
+  - **日本語対応**: AIによる説明は日本語で生成されます。
+  - **推測禁止**: 説明は入力された`hash`, `size`, `path`の情報のみを根拠とし、ファイル内容に関する推測（例：「同じ音楽ファイル」）を行いません。
 
-- Repository inspection (manual, 2026-01-12): no embedded secrets or credentials were found in the files I reviewed. This statement is not a substitute for automated secret scanning — run tools such as `git-secrets` or `truffleHog` before publishing for higher assurance.
-- The application is intended for local use: the FastAPI server binds to `127.0.0.1` by default. The provided `run_app.bat` uses `--reload` for development convenience; do not use `--reload` in production.
-- Front-end assets are fetched from third-party CDNs (Google Fonts, Font Awesome, Chart.js). If you require a fully offline distribution or want to avoid external network requests, bundle these assets into the repository or serve them locally.
-- CORS: the app is configured to allow only `http://127.0.0.1:8000` by default. If you need to change this flag for your environment, edit `backend/main.py`'s `allow_origins` list accordingly.
-- Licensing: this repository includes an `LICENSE` file using the MIT license. Before publishing, replace the placeholder copyright holder in `LICENSE` with your
-    name or organization. If you prefer a different license (Apache-2.0, GPLv3, etc.), replace `LICENSE` with your chosen license.
+---
 
-**日本語（推奨）**
+## 4. AIモードの設計思想
 
-- （手動チェック、2026-01-12）確認したファイル群からは認証情報や秘密鍵などの機密情報は見つかりませんでした。本記載は目視による確認に基づいており、自動スキャンの代替にはなりません。公開前に `git-secrets` や `truffleHog` などのツールで追加確認することを推奨します。
-- 本アプリはローカル実行を想定しており、FastAPIはデフォルトで `127.0.0.1` にバインドします。`run_app.bat` は開発用に `--reload` を使っています。本番では `--reload` を外してください。
-- フロントエンドは外部CDN（Google Fonts、Font Awesome、Chart.js）を利用しています。完全オフライン配布や外部依存を避けたい場合は、これらをリポジトリに同梱して配布してください。
-- CORS: デフォルトで `http://127.0.0.1:8000` のみ許可する設定に変更済みです。必要に応じて `backend/main.py` の `allow_origins` を編集してください。
-- ライセンス: リポジトリに MIT ライセンスの `LICENSE` が含まれています。公開前に `LICENSE` の著作権者表記（<Your Name>）を適切に変更してください。別のライセンスを希望する場合は差し替えます。
+本ツールは「最初からAIモードで動作する」ことを前提としており、LLMの挙動を以下の通り厳格に制限しています。これは、LLMの持つ「それらしさ」や「幻覚（ハルシネーション）」を排除し、事実に基づいた説明のみを生成させるための意図的な設計です。
 
- Quick suggestions:
- 
- - Add a `SECURITY.md` with reporting instructions and a contact address for vulnerability reports. (A template is already included.)
- - Include the inspection date (as above) so future reviewers know when the manual check was performed.
- - Run a secret-scan across the full git history to ensure no secrets were committed previously.
+- **日本語出力の強制**: プロンプトで日本語以外の出力を禁止しています。
+- **推測の禁止**: ファイルの中身（音楽、動画、メタデータ等）をAIは確認できません。そのため、提供された技術的根拠から判断できない事柄への言及を固く禁じています。
+- **技術的根拠に基づく説明**: 説明は必ず`hash`, `size`, `path`の情報を元に行われます。
 
- Offline packaging
+---
 
- - This repository can be used fully offline after you populate local vendor assets and Python wheels. To prepare a machine with internet access to generate offline artifacts, perform the following from the repository root (PowerShell):
+## 5. AIによる説明機能の仕様（件数制限について）
 
- ```powershell
- # Download frontend vendor assets (Chart.js, Font Awesome webfonts)
- powershell -ExecutionPolicy Bypass -File scripts\fetch_assets.ps1
+「AIによる重複理由の説明」機能は、意図的に一度に処理できる件数に制限を設けています。
 
- # Download pip wheels for offline install
- powershell -ExecutionPolicy Bypass -File scripts\fetch_wheels.ps1
- ```
+重複ファイルグループが多数見つかった場合、デフォルトでは**先頭の一部のグループに対してのみ**AIによる説明が生成されます。すべての重複グループを一度に説明する設計とはなっておらず、途中から説明が表示されないのは**バグではなく仕様**です。
 
- - After running those scripts you will have:
-     - `backend/static/vendor/` with `chart.min.js`, `fontawesome.min.css`, and `webfonts/`.
-     - `backend/vendor/wheels/` containing Python wheels for packages in `requirements.txt`.
+### 設計上の理由
 
- - To install packages on an offline machine that has the repo and the wheels directory, run:
+この制限は、ローカル環境でLLMを安全かつ現実的なパフォーマンスで利用するために導入されています。
 
- ```powershell
- pip install --no-index --find-links=backend/vendor/wheels -r requirements.txt
- ```
+- **ローカルLLMへの過剰リクエスト防止**: すべての重複グループに対して説明を生成すると、お使いのPC上で動作するOllamaに大量のリクエストが送られ、システムのパフォーマンスが大幅に低下する可能性があります。
+- **応答性の維持**: 一括処理によるタイムアウトや、UIの応答遅延を回避します。
 
-If you want, I can: 1) replace the license with another SPDX choice, 2) bundle external assets for offline use, or 3) add a `SECURITY.md` and suggested `SECURITY` instructions. Which would you like me to do next?
+### AIの役割について
+
+繰り返しになりますが、本ツールにおいて重複判定そのものは`hash`値や`size`に基づくルールベースで行われており、AIは一切関与していません。AIの役割は、あくまでその判定結果を人間が理解しやすいように「翻訳」する補助的なものです。
+
+この件数制限は、「AIに何でも自動でやらせる」のではなく、「人間が主体となり、AIを補助として適切に使う」という本学習プロジェクトの思想を反映したものです。
+
+---
+
+## 6. 使用技術
+
+- **バックエンド**: Python, FastAPI
+- **フロントエンド**: Vanilla JavaScript, HTML, CSS
+- **ローカルLLM**: Ollama
+- **重複検出ロジック**: ファイルサイズおよびSHA256ハッシュ値に基づく比較
+
+---
+
+## 7. 実行方法（Windowsローカル環境）
+
+本ツールは、いくつかのコンポーネントを連携させて動作させます。
+
+1.  **Ollamaの起動とモデルの準備**
+    - [Ollama公式サイト](https://ollama.com/)からアプリケーションをインストールし、起動します。
+    - コマンドプロンプトで以下のコマンドを実行し、AIモデルをダウンロードします。
+      ```bash
+      ollama pull llama3
+      ```
+
+2.  **依存ライブラリのインストール**
+    - このリポジトリにある `install_requirements.bat` をダブルクリックして実行します。
+    - FastAPIなどのPythonライブラリがインストールされます。（初回のみ）
+
+3.  **FastAPIサーバーの起動**
+    - `run_app.bat` をダブルクリックして実行します。
+    - 黒いコマンドプロンプト画面が起動し、サーバーが待機状態になります。
+
+4.  **ブラウザでアクセス**
+    - Webブラウザで `http://127.0.0.1:8000` を開きます。
+    - FileVizDedupの画面が表示されれば成功です。
+
+---
+
+## 8. 注意事項・免責
+
+- 本プロジェクトは、ローカルLLMの制御方法を学ぶことを主目的とした**実験・学習用途のツール**です。
+- 大容量のディレクトリや数百万のファイルが含まれるディレクトリをスキャンすると、PCの動作が非常に遅くなる可能性があります。最初は小規模なフォルダでお試しください。
+- ファイルの削除機能は強力です。削除するファイルは、必ずご自身の責任で確認してください。本ツールの使用によって生じたいかなる損害についても、開発者は責任を負いません。

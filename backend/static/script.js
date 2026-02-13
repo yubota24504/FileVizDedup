@@ -7,6 +7,12 @@ const translations = {
         vizTitle: "File Visualization",
         dedupTitle: "Duplicates & Improvements",
         checkDupBtn: "Check Duplicates",
+        explainBtn: "Explain with AI",
+        explainLoading: "AI is thinking...",
+        deleteBtn: "Delete Selected",
+        deleteConfirm: "Are you sure you want to delete the selected files? This cannot be undone.",
+        deleteSuccess: "Files deleted successfully.",
+        deleteError: "Error deleting files",
         dedupEmpty: "No duplicates check passed yet.",
         size: "Size",
         files: "files",
@@ -21,6 +27,12 @@ const translations = {
         vizTitle: "ファイル可視化",
         dedupTitle: "重複・改善提案",
         checkDupBtn: "重複チェック",
+        explainBtn: "AIで説明",
+        explainLoading: "AIが分析中...",
+        deleteBtn: "選択ファイルを削除",
+        deleteConfirm: "選択したファイルを削除してもよろしいですか？この操作は取り消せません。",
+        deleteSuccess: "ファイルが正常に削除されました。",
+        deleteError: "ファイルの削除に失敗しました",
         dedupEmpty: "まだ重複チェックを行っていません。",
         size: "サイズ",
         files: "ファイル",
@@ -31,6 +43,7 @@ const translations = {
 
 let currentLang = 'en';
 let fileTreeData = null;
+let currentDuplicates = [];
 
 // DOM Elements
 const els = {
@@ -42,18 +55,25 @@ const els = {
     loadingText: document.getElementById('loading-text'),
     fileTree: document.getElementById('file-tree'),
     checkDupBtn: document.getElementById('check-dup-btn'),
+    explainBtn: document.getElementById('explain-btn'),
+    deleteBtn: document.getElementById('delete-btn'),
     dedupContent: document.getElementById('dedup-content'),
     dedupEmpty: document.getElementById('dedup-empty'),
     scanTitle: document.getElementById('scan-title'),
     vizTitle: document.getElementById('viz-title'),
     dedupTitle: document.getElementById('dedup-title'),
     checkDupText: document.getElementById('check-dup-text'),
+    explainBtnText: document.getElementById('explain-btn-text'),
+    deleteText: document.getElementById('delete-text'),
     dedupEmptyText: document.getElementById('dedup-empty-text'),
     scanBtnText: document.getElementById('scan-btn-text'),
     chartContainer: document.getElementById('chart-container'),
     fileChart: document.getElementById('file-chart'),
     viewToggles: document.querySelectorAll('.view-toggles button')
 };
+
+// Track selected files for deletion
+let selectedFiles = new Set();
 
 // Language Switching
 els.langToggle.addEventListener('click', () => {
@@ -71,15 +91,22 @@ function updateLanguage() {
     els.vizTitle.textContent = t.vizTitle;
     els.dedupTitle.textContent = t.dedupTitle;
     els.checkDupText.textContent = t.checkDupBtn;
+    els.explainBtnText.textContent = t.explainBtn;
+    els.deleteText.textContent = t.deleteBtn;
     els.dedupEmptyText.textContent = t.dedupEmpty;
+    // Re-render duplicates to update text
+    if (currentDuplicates && currentDuplicates.length > 0) {
+        renderDuplicates(currentDuplicates);
+    }
 }
+
 
 // File Scanning
 els.scanBtn.addEventListener('click', async () => {
     const path = els.pathInput.value;
     if (!path) return;
 
-    setLoading(true);
+    setLoading(true, translations[currentLang].loading);
     try {
         const res = await fetch('/api/scan', {
             method: 'POST',
@@ -99,12 +126,12 @@ els.scanBtn.addEventListener('click', async () => {
     }
 });
 
-// Duplicates
+// Duplicates Check
 els.checkDupBtn.addEventListener('click', async () => {
     const path = els.pathInput.value;
     if (!path) return;
 
-    setLoading(true);
+    setLoading(true, translations[currentLang].loading);
     try {
         const res = await fetch('/api/duplicates', {
             method: 'POST',
@@ -114,8 +141,17 @@ els.checkDupBtn.addEventListener('click', async () => {
         
         if (!res.ok) throw new Error('Duplicate check failed');
         
-        const duplicates = await res.json();
-        renderDuplicates(duplicates);
+        const result = await res.json();
+        currentDuplicates = result || []; // API returns an array directly
+        selectedFiles.clear();
+        renderDuplicates(currentDuplicates);
+        
+        if (currentDuplicates.length > 0) {
+            els.explainBtn.style.display = 'inline-block';
+        } else {
+            els.explainBtn.style.display = 'none';
+        }
+
     } catch (e) {
         alert('Error checking duplicates: ' + e.message);
     } finally {
@@ -123,13 +159,87 @@ els.checkDupBtn.addEventListener('click', async () => {
     }
 });
 
-function setLoading(isLoading) {
+// Explain Duplicates
+els.explainBtn.addEventListener('click', async () => {
+    const path = els.pathInput.value;
+    if (!path || currentDuplicates.length === 0) return;
+
+    setLoading(true, translations[currentLang].explainLoading);
+    try {
+        const res = await fetch('/api/duplicates/explain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path, lang: currentLang, max_groups: 10 })
+        });
+
+        if (!res.ok) throw new Error('Explain duplicates failed');
+
+        const result = await res.json();
+        // Merge explanations into currentDuplicates
+        const explainedGroups = result.groups || [];
+        explainedGroups.forEach(explainedGroup => {
+            const originalGroup = currentDuplicates.find(g => g.hash === explainedGroup.hash);
+            if (originalGroup) {
+                originalGroup.explanation = explainedGroup.explanation;
+            }
+        });
+        renderDuplicates(currentDuplicates);
+
+    } catch (e) {
+        alert('Error explaining duplicates: ' + e.message);
+    } finally {
+        setLoading(false);
+    }
+});
+
+
+// Delete Selected Files
+els.deleteBtn.addEventListener('click', async () => {
+    if (selectedFiles.size === 0) {
+        alert('No files selected for deletion.');
+        return;
+    }
+
+    const t = translations[currentLang];
+    if (!confirm(t.deleteConfirm)) return;
+
+    setLoading(true, translations[currentLang].loading);
+    try {
+        const res = await fetch('/api/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: Array.from(selectedFiles) })
+        });
+        
+        if (!res.ok) throw new Error('Delete operation failed');
+        
+        const result = await res.json();
+        alert(t.deleteSuccess);
+        selectedFiles.clear();
+        els.deleteBtn.style.display = 'none';
+        
+        // Refresh duplicates list by clicking the button again
+        els.checkDupBtn.click();
+
+    } catch (e) {
+        alert(t.deleteError + ': ' + e.message);
+    } finally {
+        setLoading(false);
+    }
+});
+
+function setLoading(isLoading, text = "Loading...") {
+    els.loadingText.textContent = text;
     if (isLoading) {
         els.loading.classList.remove('hidden');
         els.scanBtn.disabled = true;
+        els.checkDupBtn.disabled = true;
+        els.explainBtn.disabled = true;
     } else {
         els.loading.classList.add('hidden');
         els.scanBtn.disabled = false;
+        els.checkDupBtn.disabled = false;
+        els.explainBtn.disabled = false;
     }
 }
 
@@ -162,21 +272,13 @@ function createTreeNode(node) {
         header.addEventListener('click', (e) => {
             childrenContainer.classList.toggle('hidden');
             const icon = header.querySelector('i');
-            if (childrenContainer.classList.contains('hidden')) {
-                icon.className = 'fa-regular fa-folder';
-            } else {
-                icon.className = 'fa-regular fa-folder-open';
-            }
+            icon.className = childrenContainer.classList.contains('hidden') ? 'fa-regular fa-folder' : 'fa-regular fa-folder-open';
             e.stopPropagation();
         });
 
         div.appendChild(header);
         div.appendChild(childrenContainer);
 
-        // Lazy load children only when expanded? No, data is already here.
-        // But for performance, maybe render only directories first? 
-        // Let's render everything but maybe limit depth if it's too huge.
-        // For now, simple recursion.
         node.children.forEach(child => {
             childrenContainer.appendChild(createTreeNode(child));
         });
@@ -186,20 +288,39 @@ function createTreeNode(node) {
     return div;
 }
 
-function renderDuplicates(duplicates) {
+function renderDuplicates(groups) {
     els.dedupContent.innerHTML = '';
     const t = translations[currentLang];
 
-    if (duplicates.length === 0) {
-        els.dedupContent.innerHTML = `<div class="empty-state"><p>${t.dedupEmpty}</p></div>`;
+    if (!groups || groups.length === 0) {
+        els.dedupContent.innerHTML = `<div class="empty-state" id="dedup-empty">
+            <i class="fa-regular fa-clone"></i>
+            <p id="dedup-empty-text">${t.dedupEmpty}</p>
+        </div>`;
+        els.deleteBtn.style.display = 'none';
+        els.explainBtn.style.display = 'none';
         return;
     }
 
-    duplicates.forEach(group => {
+    groups.forEach(group => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'dup-group glass-panel';
         
-        const wasted = group.size * (group.paths.length - 1);
+        const wasted = group.wasted;
+        
+        const pathsHtml = group.paths.map(p => {
+            const isSelected = selectedFiles.has(p);
+            return `
+                <div class="dup-path">
+                    <input type="checkbox" class="file-checkbox" data-file="${p}" ${isSelected ? 'checked' : ''}>
+                    <i class="fa-solid fa-turn-up"></i> ${p}
+                </div>
+            `;
+        }).join('');
+
+        const explanationHtml = group.explanation 
+            ? `<div class="dup-explanation">${group.explanation}</div>` 
+            : '';
         
         groupDiv.innerHTML = `
             <div class="dup-header">
@@ -207,48 +328,66 @@ function renderDuplicates(duplicates) {
                 <span>${group.paths.length} ${t.files} (${formatSize(group.size)} each)</span>
             </div>
             <div class="dup-paths">
-                ${group.paths.map(p => `<div class="dup-path"><i class="fa-solid fa-turn-up"></i> ${p}</div>`).join('')}
+                ${pathsHtml}
             </div>
             <div class="dup-warning">
                 <i class="fa-solid fa-lightbulb"></i> ${t.suggestion}
             </div>
+            ${explanationHtml}
         `;
+        
+        groupDiv.querySelectorAll('.file-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const file = e.target.dataset.file;
+                if (e.target.checked) {
+                    selectedFiles.add(file);
+                } else {
+                    selectedFiles.delete(file);
+                }
+                els.deleteBtn.style.display = selectedFiles.size > 0 ? 'inline-block' : 'none';
+            });
+        });
+        
         els.dedupContent.appendChild(groupDiv);
     });
+
+    els.deleteBtn.style.display = selectedFiles.size > 0 ? 'inline-block' : 'none';
+    els.explainBtn.style.display = 'inline-block';
 }
+
 
 // Chart Visualization
 let myChart = null;
 
 function renderChart(data) {
     if (typeof Chart === 'undefined') {
-        // Chart.js is not available (offline). Show a friendly placeholder instead of throwing.
-        if (myChart) {
-            try { myChart.destroy(); } catch (e) { /* ignore */ }
-            myChart = null;
-        }
-        els.chartContainer.innerHTML = '<div class="empty-state">Chart visualization unavailable (offline).</div>';
+        if (myChart) myChart.destroy();
+        els.chartContainer.innerHTML = '<div class="empty-state">Chart visualization unavailable.</div>';
         return;
     }
 
     if (myChart) myChart.destroy();
 
-    // Flatten top level dirs for chart
     const labels = data.children.map(c => c.name);
-    const params = data.children.map(c => c.size);
+    const sizes = data.children.map(c => c.size);
     
-    // Sort and take top 10
-    const indices = Array.from(params.keys()).sort((a,b) => params[b] - params[a]).slice(0, 10);
-    const sortedLabels = indices.map(i => labels[i]);
-    const sortedData = indices.map(i => params[i]);
+    const others = { label: 'Others', size: 0 };
+    const chartData = sizes.map((size, i) => ({ label: labels[i], size }))
+        .sort((a, b) => b.size - a.size);
+
+    const top10 = chartData.slice(0, 10);
+    const otherSize = chartData.slice(10).reduce((acc, curr) => acc + curr.size, 0);
+    if(otherSize > 0) {
+        top10.push({label: 'Others', size: otherSize});
+    }
 
     const ctx = els.fileChart.getContext('2d');
     myChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: sortedLabels,
+            labels: top10.map(d => d.label),
             datasets: [{
-                data: sortedData,
+                data: top10.map(d => d.size),
                 backgroundColor: [
                     '#3b82f6', '#ef4444', '#22c55e', '#eab308', '#a855f7', 
                     '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#64748b'
@@ -258,6 +397,7 @@ function renderChart(data) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'right',
@@ -284,3 +424,5 @@ els.viewToggles.forEach(btn => {
         }
     });
 });
+
+updateLanguage();

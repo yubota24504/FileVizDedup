@@ -128,6 +128,27 @@ input[type="text"]:focus {
     background: rgba(255, 255, 255, 0.2);
 }
 
+.btn-danger {
+    background: var(--accent-red);
+    color: white;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -227,10 +248,46 @@ h2 { font-size: 1.25rem; font-weight: 500; }
     word-break: break-all;
 }
 
+.file-checkbox {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
 .dup-warning {
     color: var(--accent-red);
     font-size: 0.8em;
     margin-top: 4px;
+}
+
+.dup-explanation {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 12px;
+    font-size: 0.85em;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+    border-left: 3px solid var(--accent-green);
+}
+
+.btn-action {
+    background: var(--accent-green);
+    color: white;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.btn-action:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
 }
 
 /* Loading Spinner */
