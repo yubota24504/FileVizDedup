@@ -58,10 +58,11 @@ def find_duplicates(root_path):
                 duplicates.append({
                     "hash": file_hash,
                     "size": size,
-                    "paths": paths
+                    "paths": paths,
+                    "wasted": size * (len(paths) - 1)
                 })
 
     # Sort by size (descending) to show largest wasted space first
-    duplicates.sort(key=lambda x: x["size"] * (len(x["paths"]) - 1), reverse=True)
+    duplicates.sort(key=lambda x: x["wasted"], reverse=True)
     
     return duplicates
